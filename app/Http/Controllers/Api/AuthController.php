@@ -82,7 +82,7 @@ class AuthController extends Controller
 
         $response = [
             'response'      => 1,
-            'message'       => 'You have been succesfully logged out!',
+            'message'       => 'You have been Successfully logged out!',
         ];
         return response($response, 200);
 
