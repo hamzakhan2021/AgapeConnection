@@ -26,7 +26,9 @@ class AuthController extends Controller
 
         if ($validator->fails())
         {
-            return response(['errors'=>$validator->errors()->all()], 422);
+            return response([
+                'response'  => 0,
+                'message'    =>$validator->errors()->all()], 422);
         }
         $request['password']=Hash::make($request['password']);
         $user = User::create($request->toArray());
