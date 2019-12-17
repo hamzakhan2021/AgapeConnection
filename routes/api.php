@@ -24,7 +24,11 @@ Route::group(['middleware' => ['json.response']], function () {
 
     // private routes
     Route::middleware('auth:api')->group(function () {
+        Route::apiResources([
+            'Users'       => 'Api\UserController',
+        ]);
         Route::post('/user/update', 'Api\UserController@updateProfile')->name('update.api');
+        Route::post('/user/profile/picture', 'Api\UserController@updateProfile')->name('update.api');
         Route::get('/logout', 'Api\AuthController@logout')->name('logout');
     });
 

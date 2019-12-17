@@ -21,7 +21,22 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+       $user = Auth::user();
+        $response = [
+            'response'  => 0,
+            'message'    => 'No record found'
+        ];
+       if($user){
+           $usersAll = User::all();
+           {
+               $response = [
+                   'response'   => 1,
+                   'message'    => 'All Users',
+                   'data'       => $usersAll
+               ];
+           }
+       }
+       return response($response , 200);
     }
 
     /**
@@ -122,20 +137,20 @@ class UserController extends Controller
                 if(!file_exists($this->tempDir)) {
                     $this->createDirectories();
                 }
-                $AllowedFiles = ['pdf', 'mp4', 'png', 'jpg', 'jpeg'];
+                $AllowedFiles = ['png', 'jpg', 'jpeg'];
                 if(!in_array($file->getClientOriginalExtension(), $AllowedFiles)){
-                    throw new Exception('only pdf, mp4, jpg files are allowed');
+                    throw new Exception('only png,jpeg, jpg files are allowed');
                 }
                 $cleanFileName = _clean_string($file->getClientOriginalName());
                 if( $file->move($this->tempDir, $cleanFileName) ) {
                     if(in_array($file->getClientOriginalExtension(), ['pdf'])){
-                        $toImage = $this->pdfToImage($cleanFileName);
-                        if($toImage['response'] == 1) {
-                            File::delete($this->tempDir.'/'.$cleanFileName);
-                            $this->responseData['response'] = 1;
-                            $this->responseData['message'] = "slides created";
-                            $this->responseData['data'] = $toImage['data'];
-                        }
+//                        $toImage = $this->pdfToImage($cleanFileName);
+//                        if($toImage['response'] == 1) {
+//                            File::delete($this->tempDir.'/'.$cleanFileName);
+//                            $this->responseData['response'] = 1;
+//                            $this->responseData['message'] = "slides created";
+//                            $this->responseData['data'] = $toImage['data'];
+//                        }
                     }
                     return $this->successResponse();
                 }
