@@ -28,7 +28,8 @@ Route::group(['middleware' => ['json.response']], function () {
             'Users'       => 'Api\UserController',
         ]);
         Route::post('/user/update', 'Api\UserController@updateProfile')->name('update.api');
-        Route::post('/user/profile/picture', 'Api\UserController@updateProfile')->name('update.api');
+        Route::post('/upload/profileImage', 'Api\UserController@uploadImage')->name('upload.api');
+        Route::post('/search/byName', 'Api\UserController@searchByName')->name('searchName.api');
         Route::get('/logout', 'Api\AuthController@logout')->name('logout');
     });
 

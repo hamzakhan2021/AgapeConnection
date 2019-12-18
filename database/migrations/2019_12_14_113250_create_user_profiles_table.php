@@ -15,6 +15,9 @@ class CreateUserProfilesTable extends Migration
     {
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->integer('user_id');
+            $table->string('image')->nullable();
+            $table->boolean('status')->default(0);
             $table->timestamps();
         });
     }

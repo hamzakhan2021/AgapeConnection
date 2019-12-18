@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\TrainingFile;
 use App\User;
+use App\UserProfile;
+use Couchbase\UserSettings;
 use Exception;
 use File;
 use Illuminate\Filesystem\Filesystem;
@@ -27,7 +29,7 @@ class UserController extends Controller
             'message'    => 'No record found'
         ];
        if($user){
-           $usersAll = User::all();
+           $usersAll = User::with('userProfiless')->get();
            {
                $response = [
                    'response'   => 1,
@@ -94,38 +96,94 @@ class UserController extends Controller
         return response($response, 200);
     }
 
-    public function uploadImage(){
-        $ecib       = Ecib::find($id);
-        $file       = $request->file('file');
-        $extension  = $file->getClientOriginalExtension();
-        $uniqueId = uniqid();
-        $fileName   = "{$ecib->cnic}_{$ecib->unique_key}_{$uniqueId}";
-        $pdfFile   = "{$fileName}".'.'.$extension;
-        $textFile   = "{$fileName}".'.txt';
-        $storage = \Storage::disk('public');
-        $filePath = "/ecib/".$pdfFile;
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function uploadImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file'    => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
 
-        if($storage->put($filePath, file_get_contents($file), 'public')){
-            $this->responseData['data'] = [
-                'fileName' => "/storage{$filePath}",
-                'credit_details' => [],
-                'file_cnic' => ''
-            ];
-            $storedPdfFile =  storage_path()."/app/public".$filePath;
-            $textFile =   storage_path()."/app/public/ecib/".$textFile;
-            if(file_exists($storedPdfFile)){
-                shell_exec("/usr/bin/pdftotext -layout -eol unix $storedPdfFile $textFile");
-                if(file_exists($textFile)){
-                    $content = file_get_contents($textFile);
-                    $this->responseData['data']['credit_details'] = $this->getCreditDetails($content);
-                    $this->responseData['data']['file_cnic'] = $this->getNewCnic($content);
-                }
-            }
-            $this->responseData['message'] = "File uploaded successfully";
-        }else {
-            $this->responseData['response'] = 0;
+        if ($validator->fails())
+        {
+            return response([
+                'response'  => 0,
+                'message'    =>$validator->errors()->all()], 422);
         }
-        return response()->json($this->responseData, $this->httpCode);
+
+        $user = Auth::user();
+        if ($user) {
+            $file       = $request->file('file');
+            $extension  = $file->getClientOriginalExtension();
+            $uniqueId = uniqid();
+            $fileName   = "{$user->id}_{$user->name}";
+            $imageFile   = "{$fileName}".'.'.$extension;
+            $textFile   = "{$fileName}".'.txt';
+            $storage = \Storage::disk('public');
+            $filePath = "/images/".$imageFile;
+
+            if($storage->put($filePath, file_get_contents($file), 'public'))
+            {
+                UserProfile::create([
+                    'user_id' => $user->id,
+                    'image'   => "/storage{$filePath}"
+                ]);
+                $this->responseData = [
+                    'response' => 1,
+                    'message' => "File uploaded successfully",
+                    'data' => ['fileName' => "/storage{$filePath}"],
+                ];
+            } else {
+                $this->responseData = [
+                    'response' => 0,
+                    'message'  => "File not uploaded",
+                        ];
+            }
+        } else {
+            $this->responseData = [
+                'response' => 0,
+                'message'  => "User not exist",
+            ];
+        }
+        return response()->json($this->responseData, 200);
+    }
+
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
+    public function searchByName(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'name'                  => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails())
+        {
+            return response([
+                'response'  => 0,
+                'message'    =>$validator->errors()->all()], 422);
+        }
+
+        $name = $request->get('name');
+        $usersData = User::where('name', 'LIKE', "%{$name}%")->get();
+        if($usersData){
+            $response = [
+                'response'  => 1,
+                'message'  => 'User found',
+                'data'      => $usersData
+            ];
+
+        } else {
+           $response = [
+               'response'  => 0,
+                'message'  => 'User not found'
+           ];
+        }
+
+        return response($response, 200);
     }
 
     public function uploadFile(Request $request) {
