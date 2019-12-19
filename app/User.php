@@ -39,7 +39,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function userProfiless()
+    public function userGallery()
     {
         return $this->hasMany('App\UserProfile');
     }

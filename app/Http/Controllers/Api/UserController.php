@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Marker;
 use App\TrainingFile;
 use App\User;
 use App\UserProfile;
@@ -25,11 +26,11 @@ class UserController extends Controller
     {
        $user = Auth::user();
         $response = [
-            'response'  => 0,
+            'response'   => 0,
             'message'    => 'No record found'
         ];
        if($user){
-           $usersAll = User::with('userProfiless')->get();
+           $usersAll = User::with('userGallery')->get();
            {
                $response = [
                    'response'   => 1,
@@ -100,7 +101,7 @@ class UserController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      */
-    public function uploadImage(Request $request)
+    public function uploadGalleryImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'file'    => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -117,12 +118,11 @@ class UserController extends Controller
         if ($user) {
             $file       = $request->file('file');
             $extension  = $file->getClientOriginalExtension();
-            $uniqueId = uniqid();
-            $fileName   = "{$user->id}_{$user->name}";
-            $imageFile   = "{$fileName}".'.'.$extension;
-            $textFile   = "{$fileName}".'.txt';
-            $storage = \Storage::disk('public');
-            $filePath = "/images/".$imageFile;
+            $uniqueId   = uniqid();
+            $fileName   = "{$user->id}_{$user->name}_{$uniqueId}";
+            $imageFile  = "{$fileName}".'.'.$extension;
+            $storage    = \Storage::disk('public');
+            $filePath   = "/images/".$imageFile;
 
             if($storage->put($filePath, file_get_contents($file), 'public'))
             {
@@ -131,9 +131,9 @@ class UserController extends Controller
                     'image'   => "/storage{$filePath}"
                 ]);
                 $this->responseData = [
-                    'response' => 1,
-                    'message' => "File uploaded successfully",
-                    'data' => ['fileName' => "/storage{$filePath}"],
+                    'response'  => 1,
+                    'message'   => "File uploaded successfully",
+                    'data'      => ['fileName' => "/storage{$filePath}"],
                 ];
             } else {
                 $this->responseData = [
@@ -186,38 +186,35 @@ class UserController extends Controller
         return response($response, 200);
     }
 
-    public function uploadFile(Request $request) {
-        if($request->file('file')){
-            $userId = \Auth::user()->id;
-            $this->tempDir = 'storage/'.$userId.'/temp';
-            $file = $request->file('file');
-            try {
-                if(!file_exists($this->tempDir)) {
-                    $this->createDirectories();
-                }
-                $AllowedFiles = ['png', 'jpg', 'jpeg'];
-                if(!in_array($file->getClientOriginalExtension(), $AllowedFiles)){
-                    throw new Exception('only png,jpeg, jpg files are allowed');
-                }
-                $cleanFileName = _clean_string($file->getClientOriginalName());
-                if( $file->move($this->tempDir, $cleanFileName) ) {
-                    if(in_array($file->getClientOriginalExtension(), ['pdf'])){
-//                        $toImage = $this->pdfToImage($cleanFileName);
-//                        if($toImage['response'] == 1) {
-//                            File::delete($this->tempDir.'/'.$cleanFileName);
-//                            $this->responseData['response'] = 1;
-//                            $this->responseData['message'] = "slides created";
-//                            $this->responseData['data'] = $toImage['data'];
-//                        }
-                    }
-                    return $this->successResponse();
-                }
-            } catch(Exception $e) {
-                $data['response'] = 0;
-                $data['message'] = $e->getMessage();
-                return $data;
-            }
+
+
+    public function searchByLatLng(Request $request)
+    {
+        $lat = $request->get('lat');
+        $lng = $request->get('lng');
+        $distance = 50;
+
+        $query = Marker::getByDistance($lat, $lng, $distance);
+
+        if(empty($query)) {
+            return 0;
         }
+
+        $ids = [];
+
+        //Extract the id's
+        foreach($query as $q)
+        {
+            array_push($ids, $q->id);
+        }
+
+        // Get the listings that match the returned ids
+        $results = DB::table('markers')->whereIn( 'id', $ids)->orderBy('rating', 'DESC')->paginate(3);
+
+        $articles = $results;
+
+        return $articles;
+
     }
 
     public function removeFile(Request $request) {
@@ -252,6 +249,63 @@ class UserController extends Controller
         return $this->successResponse();
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function uploadProfileImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file'    => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails())
+        {
+            return response([
+                'response'  => 0,
+                'message'    =>$validator->errors()->all()], 422);
+        }
+
+        $user = Auth::user();
+        if ($user) {
+            $file       = $request->file('file');
+            $extension  = $file->getClientOriginalExtension();
+            $uniqueId   = uniqid();
+            $fileName   = "{$user->id}_{$user->name}_{$uniqueId}";
+            $imageFile  = "{$fileName}".'.'.$extension;
+            $storage    = \Storage::disk('public');
+            $filePath   = "/images/".$imageFile;
+
+            if($storage->put($filePath, file_get_contents($file), 'public'))
+            {
+//                UserProfile::create([
+//                    'user_id' => $user->id,
+//                    'image'   => "/storage{$filePath}"
+//                ]);
+                $userProfileImage = User::find($user->id);
+                if ($userProfileImage) {
+                    $userProfileImage->profile_photo = "/storage{$filePath}" ?? null;
+                    $userProfileImage->save();
+                }
+                $this->responseData = [
+                    'response'  => 1,
+                    'message'   => "File uploaded successfully",
+                    'data'      => ['fileName' => "/storage{$filePath}"],
+                ];
+            } else {
+                $this->responseData = [
+                    'response' => 0,
+                    'message'  => "File not uploaded",
+                ];
+            }
+        } else {
+            $this->responseData = [
+                'response' => 0,
+                'message'  => "User not exist",
+            ];
+        }
+        return response()->json($this->responseData, 200);
+    }
 
     /**
      * Store a newly created resource in storage.

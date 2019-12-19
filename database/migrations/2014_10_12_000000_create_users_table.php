@@ -24,6 +24,7 @@ class CreateUsersTable extends Migration
             $table->string('religion')->nullable();;
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('profile_photo')->nullable();
             $table->boolean('paid_account_status')->default(0);
             $table->boolean('status')->default(0);
             $table->rememberToken();

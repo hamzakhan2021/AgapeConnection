@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Marker;
 use App\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -11,7 +12,6 @@ use Illuminate\Http\Request;
 class AuthController extends Controller
 {
     public function register (Request $request) {
-
         $validator = Validator::make($request->all(), [
             'name'                  => 'required|string|max:255',
             'email'                 => 'required|string|email|max:255|unique:users',
@@ -22,17 +22,24 @@ class AuthController extends Controller
             'gender'                => 'required',
             'education_level'       => 'required',
             'religion'              => 'required',
+            'lat'                   => 'required',
+            'lng'                   => 'required',
         ]);
 
         if ($validator->fails())
         {
             return response([
-                'response'  => 0,
-                'message'    =>$validator->errors()->all()], 422);
+                'response'   => 0,
+                'message'    => $validator->errors()->all()], 422);
         }
         $request['password']=Hash::make($request['password']);
         $user = User::create($request->toArray());
+        Marker::create([
+            'user_id'   => $user->id,
+            'lat'       => $request->lat ?? '',
+            'lng'       => $request->lng ?? ''
 
+        ]);
         $token = $user->createToken('Laravel Password Grant Client')->accessToken;
         $response = [
             'response'      => 1,
