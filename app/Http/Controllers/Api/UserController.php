@@ -31,7 +31,7 @@ class UserController extends Controller
         ];
        if($user){
            $usersAll = User::with('userGallery')->get();
-           {
+           if($usersAll) {
                $response = [
                    'response'   => 1,
                    'message'    => 'All Users',
@@ -326,7 +326,24 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        //
+        $response = [
+            'response'   => 0,
+            'message'    => 'No record found'
+        ];
+        if(!is_null($id)){
+            $user = Auth::user();
+            if($user){
+                $usersAll = User::with('userGallery')->where('id',$id)->first();
+                if($usersAll){
+                    $response = [
+                        'response'   => 1,
+                        'message'    => 'User found',
+                        'data'       => $usersAll
+                    ];
+                }
+            }
+        }
+        return response($response , 200);
     }
 
     /**
