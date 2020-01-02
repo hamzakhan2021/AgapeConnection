@@ -29,7 +29,7 @@ class UserController extends Controller
             'response'   => 0,
             'message'    => 'No record found'
         ];
-       if($user){
+       if($user) {
            $usersAll = User::with('userGallery')->get();
            if($usersAll) {
                $response = [
@@ -60,7 +60,7 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name'                  => 'string|max:255',
-            'email'                 => 'required|string|email|max:255|unique:users',
+            'email'                 => 'required|string|email|max:255',
             'password'              => 'required|string|min:6|confirmed',
             'password_confirmation' => 'required',
             'date_of_birth'         => 'required',
@@ -119,7 +119,7 @@ class UserController extends Controller
             $file       = $request->file('file');
             $extension  = $file->getClientOriginalExtension();
             $uniqueId   = uniqid();
-            $fileName   = "{$user->id}_{$user->name}_{$uniqueId}";
+            $fileName   = "{$user->id}_{$uniqueId}";
             $imageFile  = "{$fileName}".'.'.$extension;
             $storage    = \Storage::disk('public');
             $filePath   = "/images/".$imageFile;
@@ -168,8 +168,8 @@ class UserController extends Controller
         }
 
         $name = $request->get('name');
-        $usersData = User::where('name', 'LIKE', "%{$name}%")->get();
-        if($usersData){
+        $usersData = User::with('userGallery')->where('name', 'LIKE', "%{$name}%")->get()->toArray();
+        if($usersData != []){
             $response = [
                 'response'  => 1,
                 'message'  => 'User found',
@@ -284,13 +284,13 @@ class UserController extends Controller
 //                ]);
                 $userProfileImage = User::find($user->id);
                 if ($userProfileImage) {
-                    $userProfileImage->profile_photo = "/storage{$filePath}" ?? null;
+                    $userProfileImage->profile_photo = "/storage/app/public{$filePath}" ?? null;
                     $userProfileImage->save();
                 }
                 $this->responseData = [
                     'response'  => 1,
                     'message'   => "File uploaded successfully",
-                    'data'      => ['fileName' => "/storage{$filePath}"],
+                    'data'      => ['fileName' => "/storage/app/public{$filePath}"],
                 ];
             } else {
                 $this->responseData = [

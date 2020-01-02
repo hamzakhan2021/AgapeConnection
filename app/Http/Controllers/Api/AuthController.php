@@ -18,7 +18,7 @@ class AuthController extends Controller
             'password'              => 'required|string|min:6|confirmed',
             'password_confirmation' => 'required',
             'date_of_birth'         => 'required',
-            'phone_number'          => 'required|unique:users',
+            'phone_number'          => 'required',
             'gender'                => 'required',
             'education_level'       => 'required',
             'religion'              => 'required',
@@ -28,9 +28,18 @@ class AuthController extends Controller
 
         if ($validator->fails())
         {
+            $error = implode(',', $validator->errors()->all());
             return response([
                 'response'   => 0,
-                'message'    => $validator->errors()->all()], 422);
+                'message'    => $error], 422);
+        }
+        $oldUser = User::where('phone_number',$request->phone_number)->first();
+        if(!is_null($oldUser)) {
+             $response = [
+                'response'   => 0,
+                'message'    => 'Phone number Already exist'
+            ];
+            return  response($response, 422);
         }
         $request['password']=Hash::make($request['password']);
         $user = User::create($request->toArray());
@@ -41,11 +50,12 @@ class AuthController extends Controller
 
         ]);
         $token = $user->createToken('Laravel Password Grant Client')->accessToken;
+        $registeredUser = User::where('id',$user->id)->get();
         $response = [
             'response'      => 1,
             'message'       => 'User Sucessfully Registered',
             'access_token'  => $token,
-            'data'          => $user
+            'data'          => $registeredUser
             ];
 
         return response($response, 200);
