@@ -10,6 +10,7 @@ use App\UserProfile;
 use Couchbase\UserSettings;
 use Exception;
 use File;
+use DB;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -189,7 +190,7 @@ class UserController extends Controller
 
 
     public function searchByLatLng(Request $request)
-    {
+    {   
         $lat = $request->get('lat');
         $lng = $request->get('lng');
         $distance = 50;
@@ -209,12 +210,15 @@ class UserController extends Controller
         }
 
         // Get the listings that match the returned ids
-        $results = DB::table('markers')->whereIn( 'id', $ids)->orderBy('rating', 'DESC')->paginate(3);
+        $results = User::whereIn( 'id', $ids)->get();
+        $response = [
+            'response' => 1,
+            'message'  => 'User found',
+            'data'     => $results
+        ];
 
-        $articles = $results;
 
-        return $articles;
-
+        return response($response, 200);
     }
 
     public function removeFile(Request $request) {
