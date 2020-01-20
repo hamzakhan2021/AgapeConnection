@@ -127,7 +127,7 @@ class UserController extends Controller
                     'picture_id' =>    $userPicture->id,
                     'status'     =>    $request->like    
                 ]);
-                $totalLikes = Like::where('user_id',$user->id)->get()->count();            
+                $totalLikes = Like::where('picture_id',$userPicture->id)->where('status',1)->get()->count();            
                 $response = [
                     'response'      => 1,
                     'message'       => 'Picture Likes added Successfully',
@@ -177,7 +177,7 @@ class UserController extends Controller
                     'picture_id' =>    $userPicture->id,
                     'comment'    =>    $request->comment    
                 ]);
-                $totalLikes = Comment::where('user_id',$user->id)->get()->count();          
+                $totalLikes = Comment::where('picture_id',$userPicture->id)->get()->count();          
                 $response = [
                     'response'          => 1,
                     'message'           => 'Picture Comments added Successfully',
