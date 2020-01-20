@@ -27,6 +27,10 @@ Route::group(['middleware' => ['json.response']], function () {
         Route::apiResources([
             'Users'       => 'Api\UserController',
         ]);
+        // like and comment
+        Route::post('/like', 'Api\UserController@getLikes')->name('getLikes.api');
+        Route::post('/comments', 'Api\UserController@getComments')->name('getComments.api');
+
         Route::post('/user/update', 'Api\UserController@updateProfile')->name('update.api');
         Route::post('/upload/galleryImage', 'Api\UserController@uploadGalleryImage')->name('upload.api');
         Route::post('/search/byName', 'Api\UserController@searchByName')->name('searchName.api');

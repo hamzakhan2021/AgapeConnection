@@ -11,6 +11,8 @@ use Couchbase\UserSettings;
 use Exception;
 use File;
 use DB;
+Use App\Like;
+Use App\Comment;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -97,6 +99,107 @@ class UserController extends Controller
 
         return response($response, 200);
     }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
+    public function getLikes(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'picture_id'                  => 'string|max:255',
+            'like'                        => 'required|boolean',
+        ]);
+
+        if ($validator->fails())
+        {
+            $error = implode(',', $validator->errors()->all());
+            return response([
+                'response'   => 0,
+                'message'    => $error], 200);
+        }
+        $user = Auth::user();
+        if(!is_null($user)) {
+            $userPicture = UserProfile::where('id',$request->picture_id)->first();
+            if(!is_null($userPicture)) {
+                $like = Like::create([
+                    'user_id'    =>    $user->id,
+                    'picture_id' =>    $userPicture->id,
+                    'status'     =>    $request->like    
+                ]);
+                $totalLikes = Like::where('user_id',$user->id)->get()->count();            
+                $response = [
+                    'response'      => 1,
+                    'message'       => 'Picture Likes added Successfully',
+                    'total_likes'   =>  isset($totalLikes) ? $totalLikes : 0,
+                ];
+            } else {
+                $response = [
+                    'response'      => 0,
+                    'message'       => 'Picture not exist',
+                ];
+            }
+            
+        } else {
+            $response = [
+                'response'      => 0,
+                'message'       => 'User not exist',
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
+    public function getComments(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'picture_id'                  => 'required|max:255',
+            'comment'                     => 'required|string',
+        ]);
+
+        if ($validator->fails())
+        {
+            $error = implode(',', $validator->errors()->all());
+            return response([
+                'response'   => 0,
+                'message'    => $error], 200);
+        }
+        $user = Auth::user();
+        if(!is_null($user)) {
+            $userPicture = UserProfile::where('id',$request->picture_id)->first();
+            if(!is_null($userPicture)) {
+                $like = Comment::create([
+                    'user_id'    =>    $user->id,
+                    'picture_id' =>    $userPicture->id,
+                    'comment'    =>    $request->comment    
+                ]);
+                $totalLikes = Comment::where('user_id',$user->id)->get()->count();          
+                $response = [
+                    'response'          => 1,
+                    'message'           => 'Picture Comments added Successfully',
+                    'total_comments'    => isset($totalLikes) ? $totalLikes : 0,
+                ];
+            } else {
+                $response = [
+                    'response'      => 0,
+                    'message'       => 'Picture not exist',
+                ];
+            }
+            
+        } else {
+            $response = [
+                'response'      => 0,
+                'message'       => 'User not exist',
+            ];
+        }
+
+        return response($response, 200);
+    }
+
 
     /**
      * @param Request $request
