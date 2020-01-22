@@ -457,6 +457,43 @@ class UserController extends Controller
         return response($response , 200);
     }
 
+    public function getCommentsLikes($id)
+    {
+        $response = [
+            'response'   => 0,
+            'message'    => 'No record found'
+        ];
+        if(!is_null($id)){
+            $user = Auth::user();
+            if($user){
+                $usersAll = User::with('userGallery')->where('id',$user->id)->first();
+                $pictureId = $id;
+                foreach($usersAll['userGallery'] as $key) {
+                    $pictureId = $key->id;
+                }
+                if($pictureId !== 0) {
+                    $comment = Comment::where('picture_id',$pictureId)->get();
+                }
+             //   dd($comment);
+             $array = [];
+                foreach($usersAll['userGallery']  as $key) {
+                    if($pictureId == $keyComm->picture_id) {
+                        $usersAll['userGallery']['comment'] = $comment;
+                    }
+                }
+                return response()->json($usersAll);
+                if($usersAll){
+                    $response = [
+                        'response'   => 1,
+                        'message'    => 'User found',
+                        'data'       => $usersAll
+                    ];
+                }
+            }
+        }
+        return response($response , 200);
+    }
+
     /**
      * Show the form for editing the specified resource.
      *

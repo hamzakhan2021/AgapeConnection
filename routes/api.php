@@ -30,6 +30,7 @@ Route::group(['middleware' => ['json.response']], function () {
         // like and comment
         Route::post('/like', 'Api\UserController@getLikes')->name('getLikes.api');
         Route::post('/comments', 'Api\UserController@getComments')->name('getComments.api');
+        Route::get('/commentsLikes/{id}', 'Api\UserController@getCommentsLikes')->name('getCommentsLikes.api');
 
         Route::post('/user/update', 'Api\UserController@updateProfile')->name('update.api');
         Route::post('/upload/galleryImage', 'Api\UserController@uploadGalleryImage')->name('upload.api');
