@@ -27,6 +27,17 @@ Route::group(['middleware' => ['json.response']], function () {
         Route::apiResources([
             'Users'       => 'Api\UserController',
         ]);
+        /**
+         * Events 
+         */
+        Route::post('/events', 'Api\UserController@storeEvents')->name('event.api');
+        Route::get('/events', 'Api\UserController@getEvents')->name('getevent.api');
+        /**
+         * Councelling
+         */
+        Route::post('/Councelling', 'Api\UserController@storeCouncellings')->name('Councelling.api');
+        Route::get('/Councelling', 'Api\UserController@getCouncelling')->name('getCouncelling.api');
+
         Route::post('/user/update', 'Api\UserController@updateProfile')->name('update.api');
         Route::post('/upload/galleryImage', 'Api\UserController@uploadGalleryImage')->name('upload.api');
         Route::post('/search/byName', 'Api\UserController@searchByName')->name('searchName.api');

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Marker;
+use App\Event;
+use App\Counselling;
 use App\TrainingFile;
 use App\User;
 use App\UserProfile;
@@ -117,6 +119,13 @@ class UserController extends Controller
 
         $user = Auth::user();
         if ($user) {
+            //$user->paid_account_status
+            $getUsers = UserProfile::where('user_id',$user->id)->get()->count();
+            if ($getUsers == '1' && $user->paid_account_status == '0'){
+                return response([
+                    'response'  => 1,
+                    'message'   => 'Please Subscribe to Perimium account for more uploads'], 200);
+            }
             $file       = $request->file('file');
             $extension  = $file->getClientOriginalExtension();
             $uniqueId   = uniqid();
@@ -187,10 +196,20 @@ class UserController extends Controller
         return response($response, 200);
     }
 
-
-
     public function searchByLatLng(Request $request)
     {   
+        $validator = Validator::make($request->all(), [
+            'lat'                  => 'required|string|max:255',
+            'lng'                  => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails())
+        {
+            $error = implode(',', $validator->errors()->all());
+            return response([
+                'response'  => 0,
+                'message'    =>$error], 422);
+        }
         $lat = $request->get('lat');
         $lng = $request->get('lng');
         $distance = 50;
@@ -198,7 +217,11 @@ class UserController extends Controller
         $query = Marker::getByDistance($lat, $lng, $distance);
 
         if(empty($query)) {
-            return 0;
+            $response = [
+                'response' => 0,
+                'message'  => 'No User found',
+            ];
+            return response($response, 200);
         }
 
         $ids = [];
@@ -216,8 +239,6 @@ class UserController extends Controller
             'message'  => 'User found',
             'data'     => $results
         ];
-
-
         return response($response, 200);
     }
 
@@ -381,5 +402,94 @@ class UserController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function storeEvents(Request $request) 
+    {
+        $validator = Validator::make($request->all(), [
+            'date'         => 'required',
+            'time_slot'    => 'required|string|max:255',
+            'event_type'   => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails())
+        {
+            $error = implode(',', $validator->errors()->all());
+            return response([
+                'response'  => 0,
+                'message'    =>$error], 422);
+        }
+        $date       = $request->get('date');
+        $timeSlot  = $request->get('time_slot');
+        $eventType = $request->get('event_type');
+        $user   = Auth::user();
+        if($user) {
+            $event = Event::create([
+                'user_id'       => $user->id,
+                'date'          => $date,
+                'time_slot'     => $timeSlot,
+                'event_type'    => $eventType
+            ]);
+            if($event) {
+                $response = [
+                    'response' => 1,
+                    'message'  => 'Event created Successfully',
+                    'data'     => $event
+                ];
+            }
+
+        } else {
+            $response = [
+                'response' => 0,
+                'message'  => 'No User found',
+            ];
+        }
+        
+        return response($response, 200);   
+    }
+
+    public function storeCouncellings(Request $request) 
+    {
+        $validator = Validator::make($request->all(), [
+            'date'         => 'required',
+            'time_slot'    => 'required|string|max:255',
+            'type'         => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails())
+        {
+            $error = implode(',', $validator->errors()->all());
+            return response([
+                'response'  => 0,
+                'message'    =>$error], 422
+            );
+        }
+        $date       = $request->get('date');
+        $timeSlot   = $request->get('time_slot');
+        $type       = $request->get('type');
+        $user   = Auth::user();
+        if($user) {
+            $event = Counselling::create([
+                'user_id'               => $user->id,
+                'date'                  => $date,
+                'time_slot'             => $timeSlot,
+                'counselling_type'      => $type
+            ]);
+            if($event) {
+                $response = [
+                    'response' => 1,
+                    'message'  => 'Councelling created Successfully',
+                    'data'     => $event
+                ];
+            }
+
+        } else {
+            $response = [
+                'response' => 0,
+                'message'  => 'No User found',
+            ];
+        }
+        
+        return response($response, 200);   
     }
 }
