@@ -127,11 +127,13 @@ class UserController extends Controller
                     'picture_id' =>    $userPicture->id,
                     'status'     =>    $request->like    
                 ]);
-                $totalLikes = Like::where('picture_id',$userPicture->id)->where('status',1)->get()->count();            
+                $totalLikes = Like::where('picture_id',$userPicture->id)->where('status',1)->get();
+                $count = $totalLikes->count();            
                 $response = [
                     'response'      => 1,
                     'message'       => 'Picture Likes added Successfully',
-                    'total_likes'   =>  isset($totalLikes) ? $totalLikes : 0,
+                    'total_likes'   => isset($count) ? $count : 0,
+                    'data'          => $totalLikes 
                 ];
             } else {
                 $response = [
@@ -177,11 +179,13 @@ class UserController extends Controller
                     'picture_id' =>    $userPicture->id,
                     'comment'    =>    $request->comment    
                 ]);
-                $totalLikes = Comment::where('picture_id',$userPicture->id)->get()->count();          
+                $totalComment = Comment::where('picture_id',$userPicture->id)->get();
+                $totalCount   = $totalComment->count();          
                 $response = [
                     'response'          => 1,
                     'message'           => 'Picture Comments added Successfully',
-                    'total_comments'    => isset($totalLikes) ? $totalLikes : 0,
+                    'total_comments'    => isset($totalCount) ? $totalCount : 0,
+                    'data'              => $totalComment
                 ];
             } else {
                 $response = [

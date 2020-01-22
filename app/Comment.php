@@ -11,8 +11,12 @@ class Comment extends Model
         'user_id', 'picture_id','comment'
     ];
 
+    protected $hidden = [
+       'created_at','updated_at'
+    ];
+
     public function pictureComment()
     {
-        return $this->belongsTo('App\UserProfile');
+        return $this->belongsTo('App\UserProfile','picture_id');
     }
 }
