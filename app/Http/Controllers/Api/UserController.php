@@ -504,7 +504,6 @@ class UserController extends Controller
                         'message'    => 'No data against this Picture'
                     ];
                 } else {
-                    $totalComment = array_keys($totalComment);
                     $response = [
                         'response'          => 1,
                         'message'           => 'Recode found',
