@@ -17,6 +17,6 @@ class Comment extends Model
 
     public function pictureComment()
     {
-        return $this->belongsTo('App\UserProfile','picture_id');
+        return $this->belongsTo('App\User','user_id_id');
     }
 }

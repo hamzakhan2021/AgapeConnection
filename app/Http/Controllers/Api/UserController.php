@@ -124,18 +124,21 @@ class UserController extends Controller
         if(!is_null($user)) {
             $userPicture = UserProfile::where('id',$request->picture_id)->first();
             if(!is_null($userPicture)) {
-                $like = Like::create([
-                    'user_id'    =>    $user->id,
-                    'picture_id' =>    $userPicture->id,
-                    'status'     =>    $request->like    
-                ]);
+                $oldLike = Like::where('user_id',$user->id)->where('picture_id',$request->picture_id)->first();
+                if(is_null($oldLike)){
+                    $like = Like::create([
+                        'user_id'    =>    $user->id,
+                        'picture_id' =>    $userPicture->id,
+                        'status'     =>    $request->like    
+                    ]);
+                }
                 $totalLikes = Like::where('picture_id',$userPicture->id)->where('status',1)->get();
                 $count = $totalLikes->count();            
                 $response = [
                     'response'      => 1,
                     'message'       => 'Picture Likes added Successfully',
                     'total_likes'   => isset($count) ? $count : 0,
-                    'data'          => $totalLikes 
+                    //'data'          => $totalLikes 
                 ];
             } else {
                 $response = [
@@ -228,7 +231,7 @@ class UserController extends Controller
         if ($user) {
             //$user->paid_account_status
             $getUsers = UserProfile::where('user_id',$user->id)->get()->count();
-            if ($getUsers == '1' && $user->paid_account_status == '0'){
+            if ($getUsers == '10' && $user->paid_account_status == '0'){
                 return response([
                     'response'  => 1,
                     'message'   => 'Please Subscribe to Perimium account for more uploads'], 200);
@@ -243,14 +246,15 @@ class UserController extends Controller
 
             if($storage->put($filePath, file_get_contents($file), 'public'))
             {
-                UserProfile::create([
+                $image = UserProfile::create([
                     'user_id' => $user->id,
                     'image'   => "/storage{$filePath}"
                 ]);
                 $this->responseData = [
                     'response'  => 1,
                     'message'   => "File uploaded successfully",
-                    'data'      => ['fileName' => "/storage{$filePath}"],
+                    'data'      => $image,
+                    'image'      => ['fileName' => "/storage{$filePath}"],
                 ];
             } else {
                 $this->responseData = [
@@ -304,7 +308,7 @@ class UserController extends Controller
     }
 
     public function searchByLatLng(Request $request)
-    {   
+    {   $userId = Auth::user()->id;
         $validator = Validator::make($request->all(), [
             'lat'                  => 'required|string|max:255',
             'lng'                  => 'required|string|max:255',
@@ -336,7 +340,11 @@ class UserController extends Controller
         //Extract the id's
         foreach($query as $q)
         {
-            array_push($ids, $q->id);
+            if($q->id == $userId){
+                continue;
+            } else {
+                array_push($ids, $q->id);
+            } 
         }
 
         // Get the listings that match the returned ids
@@ -422,7 +430,8 @@ class UserController extends Controller
                 $this->responseData = [
                     'response'  => 1,
                     'message'   => "File uploaded successfully",
-                    'data'      => ['fileName' => "/storage/app/public{$filePath}"],
+                    'data'      => $userProfileImage,
+                    'fileName' => "/storage/app/public{$filePath}",
                 ];
             } else {
                 $this->responseData = [
@@ -487,27 +496,20 @@ class UserController extends Controller
         if(!is_null($id)){
             $user = Auth::user();
             if($user){
-                $usersAll = User::with('userGallery')->where('id',$user->id)->first();
-                $pictureId = $id;
-                foreach($usersAll['userGallery'] as $key) {
-                    $pictureId = $key->id;
-                }
-                if($pictureId !== 0) {
-                    $comment = Comment::where('picture_id',$pictureId)->get();
-                }
-             //   dd($comment);
-             $array = [];
-                foreach($usersAll['userGallery']  as $key) {
-                    if($pictureId == $keyComm->picture_id) {
-                        $usersAll['userGallery']['comment'] = $comment;
-                    }
-                }
-                return response()->json($usersAll);
-                if($usersAll){
+                $totalComment = Comment::where('picture_id', $id)->get('comment')->toArray();
+                $totalLike = Like::where('picture_id',$id)->where('status',1)->get()->count();
+                if(count($totalComment) == 0  && $totalLike == 0) {
                     $response = [
-                        'response'   => 1,
-                        'message'    => 'User found',
-                        'data'       => $usersAll
+                        'response'   => 0,
+                        'message'    => 'No data against this Picture'
+                    ];
+                } else {
+                    $totalComment = array_keys($totalComment);
+                    $response = [
+                        'response'          => 1,
+                        'message'           => 'Recode found',
+                        'total likes'       => isset($totalLike) ? $totalLike : '',
+                        'comments'          => isset($totalComment) ? $totalComment : '' 
                     ];
                 }
             }
