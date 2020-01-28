@@ -496,8 +496,10 @@ class UserController extends Controller
         if(!is_null($id)){
             $user = Auth::user();
             if($user){
+                $picture = UserProfile::where('id',$id)->first();
                 $totalComment = Comment::where('picture_id', $id)->get('comment')->toArray();
-                $totalLike = Like::where('picture_id',$id)->where('status',1)->get()->count();
+                $totalLike = Like::where('picture_id',$id)->where('status',1)->get()->count(); 
+                $isLiked = Like::where('picture_id',$id)->where('status',1)->where('user_id',$user->id)->get()->count();
                 if(count($totalComment) == 0  && $totalLike == 0) {
                     $response = [
                         'response'   => 0,
@@ -507,7 +509,9 @@ class UserController extends Controller
                     $response = [
                         'response'          => 1,
                         'message'           => 'Recode found',
-                        'total likes'       => isset($totalLike) ? $totalLike : '',
+                        'image'             => $picture->image,
+                        'total_likes'       => isset($totalLike) ? $totalLike : '',
+                        'is_liked'          => isset($isLiked) ? $isLiked : 0,
                         'comments'          => isset($totalComment) ? $totalComment : '' 
                     ];
                 }
