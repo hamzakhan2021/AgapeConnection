@@ -125,12 +125,20 @@ class UserController extends Controller
             $userPicture = UserProfile::where('id',$request->picture_id)->first();
             if(!is_null($userPicture)) {
                 $oldLike = Like::where('user_id',$user->id)->where('picture_id',$request->picture_id)->first();
-                if(is_null($oldLike)){
+                if(is_null($oldLike) && $request->like == 1){
                     $like = Like::create([
                         'user_id'    =>    $user->id,
                         'picture_id' =>    $userPicture->id,
                         'status'     =>    $request->like    
                     ]);
+                } else {
+                        $status = $oldLike->status;
+                        if($status == 0 && $request->like == 1){
+                            $oldLike->status = '1';
+                        } else if($status == 1 && $request->like == 0) {
+                            $oldLike->status = '0';
+                        }
+                        $oldLike->save();
                 }
                 $totalLikes = Like::where('picture_id',$userPicture->id)->where('status',1)->get();
                 $count = $totalLikes->count();            
@@ -138,7 +146,7 @@ class UserController extends Controller
                     'response'      => 1,
                     'message'       => 'Picture Likes added Successfully',
                     'total_likes'   => isset($count) ? $count : 0,
-                    //'data'          => $totalLikes 
+                    'is_liked'      => $request->like  
                 ];
             } else {
                 $response = [
@@ -189,8 +197,8 @@ class UserController extends Controller
                 $response = [
                     'response'          => 1,
                     'message'           => 'Picture Comments added Successfully',
-                    'total_comments'    => isset($totalCount) ? $totalCount : 0,
-                    'data'              => $totalComment
+                    // 'total_comments'    => isset($totalCount) ? $totalCount : 0,
+                    // 'data'              => $totalComment
                 ];
             } else {
                 $response = [
@@ -497,7 +505,15 @@ class UserController extends Controller
             $user = Auth::user();
             if($user){
                 $picture = UserProfile::where('id',$id)->first();
-                $totalComment = Comment::where('picture_id', $id)->get('comment')->toArray();
+                $totalComment = Comment::where('picture_id', $id)->get();
+                $commentArray = array();
+                foreach($totalComment as $key => $val){
+                    $UserPicture = User::where('id',$val->user_id)->first();
+                    if($val->user_id === $UserPicture->id){
+                        $totalComment[$key]['picture'] = $UserPicture->profile_photo;
+                    }
+                    
+                }
                 $totalLike = Like::where('picture_id',$id)->where('status',1)->get()->count(); 
                 $isLiked = Like::where('picture_id',$id)->where('status',1)->where('user_id',$user->id)->get()->count();
                 if(count($totalComment) == 0  && $totalLike == 0) {
@@ -508,7 +524,7 @@ class UserController extends Controller
                 } else {
                     $response = [
                         'response'          => 1,
-                        'message'           => 'Recode found',
+                        'message'           => 'Record found',
                         'image'             => $picture->image,
                         'total_likes'       => isset($totalLike) ? $totalLike : '',
                         'is_liked'          => isset($isLiked) ? $isLiked : 0,
