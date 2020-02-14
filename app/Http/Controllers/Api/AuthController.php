@@ -22,10 +22,16 @@ class AuthController extends Controller
             'gender'                => 'required',
             'education_level'       => 'required',
             'religion'              => 'required',
+            'church_attendance'     => 'required',
+            'marital_status'        => 'required',
+            'height'                => 'required',
+            'relationship_type'     => 'required',
+            'drinker'               => 'required',
+            'smoker'                => 'required',
+            'want_kids'             => 'required',
             'lat'                   => 'required',
             'lng'                   => 'required',
-        ]);
-
+            ]);
         if ($validator->fails())
         {
             $error = implode(',', $validator->errors()->all());
