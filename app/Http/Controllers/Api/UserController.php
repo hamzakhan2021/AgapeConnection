@@ -15,6 +15,7 @@ use File;
 use DB;
 Use App\Like;
 Use App\Comment;
+use Carbon\Carbon;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -329,9 +330,17 @@ class UserController extends Controller
                 'response'  => 0,
                 'message'    =>$error], 422);
         }
+        $religion           = $request->get('religion') ? $request->get('religion') : '';
+        $maritalStatus      = $request->get('marital_status') ? $request->get('marital_status') : '';
+        $age                = $request->get('age') ? $request->get('age') : '';
+        $relationshipType   = $request->get('relationship_type') ? $request->get('relationship_type') : '';
+        $interestedIn       = $request->get('interested_in') ? $request->get('interested_in') : '';
+        $distance           = 50;
         $lat = $request->get('lat');
         $lng = $request->get('lng');
         $distance = 50;
+        $age = $request->get('age');
+        $now = Carbon::now();
 
         $query = Marker::getByDistance($lat, $lng, $distance);
 
@@ -355,13 +364,54 @@ class UserController extends Controller
             } 
         }
 
-        // Get the listings that match the returned ids
-        $results = User::whereIn( 'id', $ids)->get();
-        $response = [
-            'response' => 1,
-            'message'  => 'User found',
-            'data'     => $results
-        ];
+        $q = User::whereIn( 'id', $ids);
+
+        if(isset($request->marital_status) && $request->marital_statusv != '') {
+            $q = $q->where('marital_status', '=' , $maritalStatus);
+        }
+        if(isset($request->religion) && $request->religion != '') {
+            $q = $q->where('religion', '=' , $religion);
+        }
+        if(isset($request->relationship_type) && $request->relationship_type != '') {
+            $q = $q->where('relationship_type', '=' , $relationshipType);
+        }
+        if(isset($request->interested_in) && $request->interested_in != '') {
+            $q = $q->where('gender', '=' , $interestedIn);
+        }
+        if(isset($age) && $age !== "") {
+            $dateOfBirth = $q->get();
+            $age = explode('-', $age, 2); 
+            $fromAge = $age[0];
+            $toAge   = $age[1];
+            foreach($dateOfBirth as $key => $val){
+                $date = Carbon::parse($val->date_of_birth);
+                $diff = $date->diffInYears($now);
+
+                if ($diff >= $fromAge && $diff <= $toAge) {
+                    $results[] = $val; 
+                } else {
+                    $results = [];
+                    continue;
+                }
+            }
+            
+        } else {
+            $results = $q->get();
+        }
+
+        if(count($results) > 0){
+            $response = [
+                'response' => 1,
+                'message'  => 'User found',
+                'data'     => $results
+            ];
+        } else {
+            $response = [
+                'response' => 1,
+                'message'  => 'User not found',
+            ];
+        }
+        
         return response($response, 200);
     }
 
